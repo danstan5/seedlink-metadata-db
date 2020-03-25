@@ -46,7 +46,8 @@ if len(chan_codes) > 0:
         else:
             db.add_missing("network", network_code, accesstime.id)
             missing_networks.add(network_code)
-        
+    db.session.commit()
+
     for station_code in sta_codes: # add new stations
         station = iris_meta.create_station_cls(station_code)
         if station:
@@ -54,6 +55,7 @@ if len(chan_codes) > 0:
         else:
             db.add_missing("station", station_code, accesstime.id)
             missing_stations.add(station_code)
+    db.session.commit()
 
     new_channels = [sl.channels[code] for code in chan_codes]
     for channel in new_channels:  # add new channels
