@@ -3,7 +3,7 @@ from tables import Network, Station, Channel
 
 import os
 try:
-    os.remove('test.db')
+    os.remove('test_v2.db')
 except Exception as e:
     print(e)
 

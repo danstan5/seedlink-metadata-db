@@ -26,7 +26,7 @@ print(f'Add {len(net_codes)} new networks,'
       f' {len(chan_codes)} new channels')
 
 """ Add Timestamp """
-timestamp = db.add_update_time(sl.access_time)
+accesstime = db.add_access_time(sl.access_time)
 
 """ 
 Add new channels, stations, networks or missing metadata
@@ -44,7 +44,7 @@ if len(chan_codes) > 0:
         if network:
             db.session.add(network)
         else:
-            db.add_missing("network", network_code)
+            db.add_missing("network", network_code, accesstime.id)
             missing_networks.add(network_code)
         
     for station_code in sta_codes: # add new stations
@@ -52,14 +52,14 @@ if len(chan_codes) > 0:
         if station:
             db.session.add(station)
         else:
-            db.add_missing("station", station_code)
+            db.add_missing("station", station_code, accesstime.id)
             missing_stations.add(station_code)
 
     new_channels = [sl.channels[code] for code in chan_codes]
     for channel in new_channels:  # add new channels
         if channel.station_code in missing_stations or \
            channel.network_code in missing_networks:
-            db.add_missing("channel", channel.uni_code)
+            db.add_missing("channel", channel.uni_code, accesstime.id)
         else:
             db.session.add(channel) # update links and add channel
             added_chan_codes.add(channel.uni_code)
@@ -78,7 +78,7 @@ actived_chan_codes = added_chan_codes | actived_db_chan_codes
 print(f'Length of activated {len(actived_chan_codes)}')
 for code in actived_chan_codes:
     chan_diff = ChannelDiff(diff= True,
-        uni_code=code, time=sl.access_time)
+        uni_code=code, time_id=accesstime.id)
     db.session.add(chan_diff)
 
 # were active in database not aval in seedlink data
@@ -86,7 +86,7 @@ remvd_chan_codes = db_active_codes - sl.chan_codes
 print(f'Length of removed from active {len(remvd_chan_codes)}')
 for code in remvd_chan_codes:
     chan_diff = ChannelDiff(diff= False,
-        uni_code=code, time=sl.access_time)
+        uni_code=code, time_id=accesstime.id)
     db.session.add(chan_diff)
 
 """ Update Channel.active state """
@@ -98,5 +98,5 @@ print('DONE')
 db.session.commit()
 db.close_connection()
 
-
-print(time.time()-st)
+t = time.time()-st; t_mins = int(t/60); t_secs = int(t - t_mins*60)
+print(f'Runtime {t_mins}m {t_secs}s')

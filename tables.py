@@ -68,31 +68,33 @@ class Channel(Base):
         self.uni_code = self.station_code + ':' + self.code
 
 
-class Missing(Base):
-    __tablename__ = "missing"
-
-    id = Column(Integer, primary_key=True)
-    tablename = Column(String(12))
-    code = Column(String(12))
-
-    def __init__(self, **columns):
-        self.__dict__.update(columns)
-
-
-class UpdateTime(Base):
-    __tablename__ = "update_time"
-
-    id = Column(Integer, primary_key=True)
-    datetime = Column(DateTime)
-
-
 class ChannelDiff(Base):
     __tablename__ = "channel_diff"
 
     id = Column(Integer, primary_key=True)
     uni_code = Column(String(12), ForeignKey('channel.uni_code'))
     diff = Column(Boolean) # True is activated, False is removed
-    time = Column(DateTime)
+    time_id = Column(Integer, ForeignKey('access_time.id'))
 
     def __init__(self, **columns):
         self.__dict__.update(columns)
+
+
+class Missing(Base):
+    __tablename__ = "missing"
+
+    id = Column(Integer, primary_key=True)
+    tablename = Column(String(12))
+    code = Column(String(12))
+    time_id = Column(Integer, ForeignKey('access_time.id'))
+
+    def __init__(self, **columns):
+        self.__dict__.update(columns)
+
+
+class AccessTime(Base):
+    __tablename__ = "access_time"
+
+    id = Column(Integer, primary_key=True)
+    datetime = Column(DateTime)
+    type = Column(Integer)

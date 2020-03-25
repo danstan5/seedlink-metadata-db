@@ -1,13 +1,13 @@
-from tables import Network, Station, Channel, Missing, UpdateTime
+from tables import Network, Station, Channel, Missing, AccessTime
 from base import Session
 
 class QueryDB():
     def __init__(self):
         self.session = Session()
 
-    def get_last_update(self):
-        self.prv_time = self.session.query(UpdateTime).order_by(UpdateTime.id.desc()).first()
-        return self.prv_time
+    def get_last_update_time(self):
+        self.prv_time = self.session.query(AccessTime).order_by(AccessTime.id.desc()).first()
+        return self.prv_time.datetime
     
     def get_channels(self):
         self.channels = self.session.query(Channel).all()
@@ -18,12 +18,20 @@ class QueryDB():
         self.sta_codes = set([i[0] for i in self.session.query(Station.code).all()])
         self.net_codes = set([i[0] for i in self.session.query(Network.code).all()])
 
-    def add_missing(self, tablename, code):
-        if not self.session.query(Missing).filter(
-            Missing.tablename == tablename,
-            Missing.code == code
-        ).count():
-            self.session.add(Missing(tablename=tablename, code=code))
+    def add_missing(self, tablename, code, access_time_id):
+        update = self.session.query(Missing).\
+            filter(
+                Missing.tablename==tablename,
+                Missing.code==code
+                ).\
+            update({'time_id' : access_time_id})
+        if not update:
+            missing = Missing(
+                tablename=tablename,
+                code=code,
+                time_id=access_time_id,
+                )
+            self.session.add(missing)
 
     def update_channel_actives(self, station_codes, active):
         """ change to via query rather than with ORM """
@@ -32,10 +40,13 @@ class QueryDB():
                 filter(Channel.uni_code == sta).\
                 update({"active" : active})
 
-    def add_update_time(self, access_time):
-        timestamp = UpdateTime(datetime=access_time)
-        self.session.add(timestamp)
-        return timestamp
+    def add_access_time(self, datetime, type=1):
+        accesstime = AccessTime(
+            datetime=datetime,
+            type=type,
+        )
+        self.session.add(accesstime)
+        return accesstime
 
     def close_connection(self):
         self.session.close()
