@@ -43,6 +43,6 @@ class Seedlink():
                 self.sta_codes.add(chan.station_code)
                 self.chan_codes.add(chan.uni_code)
             # TEMP
-            # if len(self.channels) > 2500:
+            # if len(self.channels) > 3900:
             #     break
     

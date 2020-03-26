@@ -56,6 +56,8 @@ class Channel(Base):
     station_code = Column(String(8), ForeignKey('station.code'))
     code = Column(String(3))
     type = Column(String(1)) # 'D', 'C', 'E', 'T', 'O', 'L'
+    sensor_description = Column(String(80))
+    sample_rate = Column(Float)
     begintime = Column(DateTime())
     endtime = Column(DateTime())
     active = Column(Boolean())

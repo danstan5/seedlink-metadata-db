@@ -21,7 +21,7 @@ print(f'{len(sl.channels)} live channels gathered from seedlink')
 chan_codes = sl.chan_codes - db.chan_codes
 net_codes = sl.net_codes - db.net_codes
 sta_codes = sl.sta_codes - db.sta_codes
-print(f'Add {len(net_codes)} new networks,'
+print(f'Add to db {len(net_codes)} new networks,'
       f' {len(sta_codes)} new stations,'
       f' {len(chan_codes)} new channels')
 
@@ -32,8 +32,6 @@ accesstime = db.add_access_time(sl.access_time)
 Add new channels, stations, networks or missing metadata
 """
 if len(chan_codes) > 0:
-    missing_networks = set()
-    missing_stations = set()
     added_chan_codes = set()
     iris_meta = Metadata()
     """ Get iris metadata """
@@ -45,7 +43,6 @@ if len(chan_codes) > 0:
             db.session.add(network)
         else:
             db.add_missing("network", network_code, accesstime.id)
-            missing_networks.add(network_code)
     db.session.commit()
 
     for station_code in sta_codes: # add new stations
@@ -54,17 +51,17 @@ if len(chan_codes) > 0:
             db.session.add(station)
         else:
             db.add_missing("station", station_code, accesstime.id)
-            missing_stations.add(station_code)
     db.session.commit()
 
     new_channels = [sl.channels[code] for code in chan_codes]
     for channel in new_channels:  # add new channels
-        if channel.station_code in missing_stations or \
-           channel.network_code in missing_networks:
-            db.add_missing("channel", channel.uni_code, accesstime.id)
-        else:
-            db.session.add(channel) # update links and add channel
+        if iris_meta.get_channel(channel.uni_code):
+            iris_meta.add_channel_meta(channel)
+            db.session.add(channel)
             added_chan_codes.add(channel.uni_code)
+        else:
+            db.add_missing("channel", channel.uni_code, accesstime.id)
+    db.session.commit()
     print(f'Length newly added to db {len(added_chan_codes)}')
 
 """ Add change state channels """
@@ -75,8 +72,7 @@ print(f'Length inactive from db {len(db_inactive_codes)}')
 print(f'Total channels in db {len(db_channels)}')
 
 # newly added to db + those not active last time now aval from seedlink
-actived_db_chan_codes = sl.chan_codes & db_inactive_codes
-actived_chan_codes = added_chan_codes | actived_db_chan_codes
+actived_chan_codes = sl.chan_codes & db_inactive_codes
 print(f'Length of activated {len(actived_chan_codes)}')
 for code in actived_chan_codes:
     chan_diff = ChannelDiff(diff= True,
@@ -92,7 +88,7 @@ for code in remvd_chan_codes:
     db.session.add(chan_diff)
 
 """ Update Channel.active state """
-db.update_channel_actives(actived_db_chan_codes, active=True)
+db.update_channel_actives(actived_chan_codes-added_chan_codes, active=True)
 db.update_channel_actives(remvd_chan_codes, active=False)
 print('DONE')
 

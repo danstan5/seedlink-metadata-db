@@ -17,41 +17,47 @@ class Metadata():
         self.nets = ",".join(nets) # set -> str
         self.stas = ",".join(stas) # set -> str
 
+    def __get_inventory(self, **kwargs):
+        kwargs['level'] = 'channel'
+        kwargs['starttime'] = UTCDateTime.now()-60
+        try:
+            return self.r_client.get_stations(**kwargs)
+        except Exception as e:
+            # TODO Log error here #
+            print(e)
+
     def get_inventory(self, sta_codes):
         """ 
         Return an inventory object of all stations in IRIS
         : can be queried by networks and stations
         """
-        try:
-            assert len(sta_codes) < 150 , 'Comment: too many stations to query on'
+        if len(sta_codes) == 0:
+            return
+        if len(sta_codes) < 400:
             self._codes_to_str(sta_codes)
-            self.inventory = self.r_client.get_stations(
+            self.inventory = self.__get_inventory(
                 network=self.nets,
-                station=self.stas,
-                starttime=UTCDateTime.now()-60,
-            )
-        except Exception as e:
-            print(e)
-            self.inventory = self.r_client.get_stations(
-                starttime=UTCDateTime.now()-60)
+                station=self.stas)
+        else:
+            print('Comment: too many stations to query on')
+            self.inventory = self.__get_inventory()
         print(f'No of networks downloaded = {len(self.inventory.networks)}.')
 
     def _get_network(self, network_code):
+        self.network = None
         for network in self.inventory.networks:
             if network.code == network_code:
                 self.network = network
                 return network
-        self.network = None
 
     def _get_station(self, station_code):
         net_code, sta_code = station_code.split('_')
-        if not self._get_network(net_code):
-            return
-        for station in self.network:
-            if station.code == sta_code:
-                self.station = station
-                return station
         self.station = None
+        if self._get_network(net_code):
+            for station in self.network:
+                if station.code == sta_code:
+                    self.station = station
+                    return station
     
     def _create_network_cls(self):
         return Network(
@@ -84,3 +90,18 @@ class Metadata():
         if self.network != None and self.station != None:
             station = self._create_station_cls()
             return station
+
+    def get_channel(self, channel_code):
+        station_code, chan_code = channel_code.split(':')
+        if self._get_station(station_code):
+            for chan in self.station:
+                if chan.code == chan_code:
+                    if chan.sensor:
+                        self.channel_sensor_description = chan.sensor.description
+                    self.channel_sensor_description = None
+                    self.channel_sample_rate = chan.sample_rate
+                    return True
+
+    def add_channel_meta(self, channel):
+        channel.sensor_description = self.channel_sensor_description
+        channel.sample_rate = self.channel_sample_rate
