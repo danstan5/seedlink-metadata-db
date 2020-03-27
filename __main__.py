@@ -1,14 +1,14 @@
-from base import Session
 from seedlink import Seedlink
-from query import QueryDB
 from iris import Metadata
+from postgres import QueryDB
+from query import QueryDB as OrmQueryDB
 from tables import ChannelDiff
 
 import time
 st = time.time()
 
 """ Connect to database """
-db = QueryDB()
+db = OrmQueryDB()
 db.get_codes()
 
 """ Get live events from seedlink """
@@ -18,63 +18,76 @@ sl.add_channels()
 print(f'{len(sl.channels)} live channels gathered from seedlink')
 
 # new codes set, for codes not in db
-chan_codes = sl.chan_codes - db.chan_codes
 net_codes = sl.net_codes - db.net_codes
 sta_codes = sl.sta_codes - db.sta_codes
-print(f'Add to db {len(net_codes)} new networks,'
+chan_codes = sl.chan_codes - db.chan_codes
+print(f'Seedlink vs existing db:'
+      f' {len(net_codes)} new networks,'
       f' {len(sta_codes)} new stations,'
       f' {len(chan_codes)} new channels')
 
 """ Add Timestamp """
 accesstime = db.add_access_time(sl.access_time)
 
-""" 
-Add new channels, stations, networks or missing metadata
-"""
+""" Add new channels, stations, networks or missing metadata """
 if len(chan_codes) > 0:
+    added_networks = set()
+    added_stations = set()
     added_chan_codes = set()
-    iris_meta = Metadata()
+    channel_metadata = set()
+    
     """ Get iris metadata """
-    iris_meta.get_inventory(sta_codes)
+    iris_meta = Metadata()
+    iris_meta.get_inventory(net_codes, sta_codes)
 
     for network_code in net_codes: # add new networks
         network = iris_meta.create_network_cls(network_code)
         if network:
             db.session.add(network)
+            added_networks.add(network_code)
         else:
             db.add_missing("network", network_code, accesstime.id)
     db.session.commit()
+    print(f'{len(net_codes)} new sl networks')
+    print(f'{len(added_networks)} avaliable from iris, added to db')
 
     for station_code in sta_codes: # add new stations
         station = iris_meta.create_station_cls(station_code)
         if station:
             db.session.add(station)
+            added_stations.add(station_code)
         else:
             db.add_missing("station", station_code, accesstime.id)
     db.session.commit()
-
+    print(f'{len(sta_codes)} new sl stations')
+    print(f'{len(added_stations)} avaliable from iris, added to db')
+    
+    dt=time.time()
     new_channels = [sl.channels[code] for code in chan_codes]
+    all_stations = added_stations | db.sta_codes
     for channel in new_channels:  # add new channels
-        if iris_meta.get_channel(channel.uni_code):
-            iris_meta.add_channel_meta(channel)
+        if channel.station_code in all_stations:
+            if iris_meta.add_channel_meta(channel):
+                channel_metadata.add(channel.uni_code)
             db.session.add(channel)
             added_chan_codes.add(channel.uni_code)
-        else:
-            db.add_missing("channel", channel.uni_code, accesstime.id)
+    print(f'{len(new_channels)} new sl channels')
+    print(f'{len(channel_metadata)} had metadata added from iris')
+    print(f'{len(added_chan_codes)} added to db')
+    print(f'Time to get channels: {time.time()-dt}s')
+    dt=time.time()
     db.session.commit()
-    print(f'Length newly added to db {len(added_chan_codes)}')
+    print(f'Time to commit channels: {time.time()-dt}s')
 
-""" Add change state channels """
+""" Add change state channels """ # TODO make this section run on psycopg2 #
 db_channels = db.get_channels()
 db_active_codes = set([c.uni_code for c in db_channels if c.active == True])
 db_inactive_codes = set([c.uni_code for c in db_channels  if c.active == False])
-print(f'Length inactive from db {len(db_inactive_codes)}')
-print(f'Total channels in db {len(db_channels)}')
 
 # newly added to db + those not active last time now aval from seedlink
-actived_chan_codes = sl.chan_codes & db_inactive_codes
-print(f'Length of activated {len(actived_chan_codes)}')
-for code in actived_chan_codes:
+db_actived_chan_codes = sl.chan_codes & db_inactive_codes
+print(f'No. of activated channels in db {len(db_actived_chan_codes)}')
+for code in db_actived_chan_codes | added_chan_codes:
     chan_diff = ChannelDiff(diff= True,
         uni_code=code, time_id=accesstime.id)
     db.session.add(chan_diff)
@@ -87,14 +100,16 @@ for code in remvd_chan_codes:
         uni_code=code, time_id=accesstime.id)
     db.session.add(chan_diff)
 
-""" Update Channel.active state """
-db.update_channel_actives(actived_chan_codes-added_chan_codes, active=True)
-db.update_channel_actives(remvd_chan_codes, active=False)
-print('DONE')
-
 """ Commit all changes to the database """
 db.session.commit()
 db.close_connection()
+print(f'Time to commit channel_diff : {time.time()-dt}s')
+
+""" Update channel.active state """
+db = QueryDB()
+db.execute_update_active_channels(db_actived_chan_codes, active=True)
+db.execute_update_active_channels(remvd_chan_codes, active=False)
+db.close()
 
 t = time.time()-st; t_mins = int(t/60); t_secs = int(t - t_mins*60)
 print(f'Runtime {t_mins}m {t_secs}s')

@@ -1,4 +1,7 @@
+.gitignore
 __pycache__
 .ipynb_checkpoints
 .vscode
 test.db
+database.ini
+light_run.py

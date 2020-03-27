@@ -7,13 +7,13 @@ class Metadata():
     def __init__(self):
         self.r_client = RoutingClient("iris-federator")
 
-    def _codes_to_str(self, unique_codes):
-        nets, stas = set(), set()
-        for code in unique_codes:
-            net, sta = code.split('_')
+    def _codes_to_str(self, network_codes, station_codes):
+        nets = set(network_codes)
+        stas = set()
+        for sta_code in station_codes:
+            net, sta = sta_code.split('_')
             nets.add(net)
             stas.add(sta)
-        print(f'Querying {len(nets)} networks, {len(stas)} stations')
         self.nets = ",".join(nets) # set -> str
         self.stas = ",".join(stas) # set -> str
 
@@ -26,15 +26,16 @@ class Metadata():
             # TODO Log error here #
             print(e)
 
-    def get_inventory(self, sta_codes):
+    def get_inventory(self, net_codes, sta_codes):
         """ 
         Return an inventory object of all stations in IRIS
         : can be queried by networks and stations
         """
         if len(sta_codes) == 0:
+            print('No station codes to add, can\'t get inventory')
             return
         if len(sta_codes) < 400:
-            self._codes_to_str(sta_codes)
+            self._codes_to_str(net_codes, sta_codes)
             self.inventory = self.__get_inventory(
                 network=self.nets,
                 station=self.stas)
@@ -91,17 +92,20 @@ class Metadata():
             station = self._create_station_cls()
             return station
 
-    def get_channel(self, channel_code):
+    def _get_channel(self, channel_code):
+        self.channel = None
         station_code, chan_code = channel_code.split(':')
         if self._get_station(station_code):
-            for chan in self.station:
-                if chan.code == chan_code:
-                    if chan.sensor:
-                        self.channel_sensor_description = chan.sensor.description
-                    self.channel_sensor_description = None
-                    self.channel_sample_rate = chan.sample_rate
-                    return True
+            for channel in self.station:
+                if channel.code == chan_code:
+                    self.channel = channel
+                    return channel
 
     def add_channel_meta(self, channel):
-        channel.sensor_description = self.channel_sensor_description
-        channel.sample_rate = self.channel_sample_rate
+        channel.sensor_description = None
+        channel.sample_rate = None
+        if self._get_channel(channel.uni_code):
+            if self.channel.sensor:
+                channel.sensor_description = self.channel.sensor.description
+            channel.sample_rate = self.channel.sample_rate
+            return True
