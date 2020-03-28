@@ -27,7 +27,7 @@ print(f'Seedlink vs existing db:'
       f' {len(chan_codes)} new channels')
 
 """ Add Timestamp """
-accesstime = db.add_access_time(sl.access_time)
+time_id = db.add_access_time(sl.access_time)
 
 """ Add new channels, stations, networks or missing metadata """
 if len(chan_codes) > 0:
@@ -46,7 +46,7 @@ if len(chan_codes) > 0:
             db.session.add(network)
             added_networks.add(network_code)
         else:
-            db.add_missing("network", network_code, accesstime.id)
+            db.add_missing("network", network_code, time_id)
     db.session.commit()
     print(f'{len(net_codes)} new sl networks')
     print(f'{len(added_networks)} avaliable from iris, added to db')
@@ -57,7 +57,7 @@ if len(chan_codes) > 0:
             db.session.add(station)
             added_stations.add(station_code)
         else:
-            db.add_missing("station", station_code, accesstime.id)
+            db.add_missing("station", station_code, time_id)
     db.session.commit()
     print(f'{len(sta_codes)} new sl stations')
     print(f'{len(added_stations)} avaliable from iris, added to db')
@@ -79,36 +79,39 @@ if len(chan_codes) > 0:
     db.session.commit()
     print(f'Time to commit channels: {time.time()-dt}s')
 
-""" Add change state channels """ # TODO make this section run on psycopg2 #
+db.close_connection()
+
+""" Add change state channels """
+dt=time.time()
+db = QueryDB()
 db_channels = db.get_channels()
-db_active_codes = set([c.uni_code for c in db_channels if c.active == True])
-db_inactive_codes = set([c.uni_code for c in db_channels  if c.active == False])
+db_active_codes = set()
+db_inactive_codes = set()
+for code, active in db_channels:
+    if active:
+        db_active_codes.add(code)
+    else:
+        db_inactive_codes.add(code)
 
 # newly added to db + those not active last time now aval from seedlink
 db_actived_chan_codes = sl.chan_codes & db_inactive_codes
 print(f'No. of activated channels in db {len(db_actived_chan_codes)}')
 for code in db_actived_chan_codes | added_chan_codes:
-    chan_diff = ChannelDiff(diff= True,
-        uni_code=code, time_id=accesstime.id)
-    db.session.add(chan_diff)
+    db.append_channel_diff(code, True, time_id)
 
 # were active in database not aval in seedlink data
 remvd_chan_codes = db_active_codes - sl.chan_codes
 print(f'Length of removed from active {len(remvd_chan_codes)}')
 for code in remvd_chan_codes:
-    chan_diff = ChannelDiff(diff= False,
-        uni_code=code, time_id=accesstime.id)
-    db.session.add(chan_diff)
+    db.append_channel_diff(code, False, time_id)
 
-""" Commit all changes to the database """
-db.session.commit()
-db.close_connection()
-print(f'Time to commit channel_diff : {time.time()-dt}s')
+n_channel_diffs = len(db.channel_diffs)
+db.add_channel_diffs()
+print(f'Time to commit {n_channel_diffs} channel_diffs : {time.time()-dt}s')
 
 """ Update channel.active state """
-db = QueryDB()
-db.execute_update_active_channels(db_actived_chan_codes, active=True)
-db.execute_update_active_channels(remvd_chan_codes, active=False)
+db.update_active_channels(db_actived_chan_codes, active=True)
+db.update_active_channels(remvd_chan_codes, active=False)
 db.close()
 
 t = time.time()-st; t_mins = int(t/60); t_secs = int(t - t_mins*60)

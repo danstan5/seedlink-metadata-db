@@ -46,7 +46,7 @@ class QueryDB():
             type=type,
         )
         self.session.add(accesstime)
-        return accesstime
+        return accesstime.id
 
     def close_connection(self):
         self.session.close()

@@ -4,4 +4,3 @@ __pycache__
 .vscode
 test.db
 database.ini
-light_run.py
