@@ -1,9 +1,8 @@
 from datetime import datetime as dt
 from obspy.clients.seedlink.easyseedlink import create_client
 import xml.etree.ElementTree as ET
-import pandas as pd
 
-from tables import Channel
+from orm.tables import Channel
 
 class Seedlink():
     def __init__(self):

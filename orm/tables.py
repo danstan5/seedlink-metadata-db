@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, Float, String, DateTime, Boolean, Foreig
 #from sqlalchemy import UniqueConstraint, PrimaryKeyConstraint
 from sqlalchemy.orm import relationship
 
-from base import Base
+from .base import Base
 
 
 class Network(Base):

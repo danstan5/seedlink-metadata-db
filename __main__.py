@@ -1,14 +1,13 @@
 from seedlink import Seedlink
 from iris import Metadata
-from postgres import QueryDB
-from query import QueryDB as OrmQueryDB
-from tables import ChannelDiff
+from query import QueryDB
+from orm.query import AlchemyQueryDB
 
 import time
 st = time.time()
 
 """ Connect to database """
-db = OrmQueryDB()
+db = AlchemyQueryDB()
 db.get_codes()
 
 """ Get live events from seedlink """
@@ -104,10 +103,8 @@ remvd_chan_codes = db_active_codes - sl.chan_codes
 print(f'Length of removed from active {len(remvd_chan_codes)}')
 for code in remvd_chan_codes:
     db.append_channel_diff(code, False, time_id)
-
-n_channel_diffs = len(db.channel_diffs)
+    
 db.add_channel_diffs()
-print(f'Time to commit {n_channel_diffs} channel_diffs : {time.time()-dt}s')
 
 """ Update channel.active state """
 db.update_active_channels(db_actived_chan_codes, active=True)

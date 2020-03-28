@@ -1,7 +1,7 @@
 from obspy.clients.fdsn import RoutingClient
 from obspy.core import UTCDateTime
 
-from tables import Network, Station
+from orm.tables import Network, Station
 
 class Metadata():
     def __init__(self):

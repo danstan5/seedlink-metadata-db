@@ -1,5 +1,4 @@
-from base import Base, Session, engine
-from tables import Network, Station, Channel
+from .base import Base, engine
 
 import os
 try:

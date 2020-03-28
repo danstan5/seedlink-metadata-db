@@ -1,5 +1,5 @@
 from seedlink import Seedlink
-from postgres import QueryDB
+from query import QueryDB
 
 import time
 st = time.time()
