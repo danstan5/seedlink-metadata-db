@@ -1,7 +1,7 @@
 from seedlink import Seedlink
 from iris import Metadata
 from query import QueryDB
-from orm.query import AlchemyQueryDB
+from orm.query import QueryDB as AlchemyQueryDB
 
 import time
 st = time.time()
@@ -36,7 +36,7 @@ if len(chan_codes) > 0:
     channel_metadata = set()
     
     """ Get iris metadata """
-    iris_meta = Metadata()
+    iris_meta = Metadata(routing_client='iris-federator')
     iris_meta.get_inventory(net_codes, sta_codes)
 
     for network_code in net_codes: # add new networks

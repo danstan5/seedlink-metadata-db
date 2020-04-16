@@ -1,6 +1,8 @@
 .gitignore
 __pycache__
 .ipynb_checkpoints
+*.ipynb
 .vscode
 test.db
 database.ini
+learn_logging

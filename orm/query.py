@@ -1,7 +1,7 @@
 from .tables import Network, Station, Channel, Missing, AccessTime
 from .base import Session
 
-class AlchemyQueryDB():
+class QueryDB():
     def __init__(self):
         self.session = Session()
 

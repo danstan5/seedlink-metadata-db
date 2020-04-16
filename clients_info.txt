@@ -1,0 +1,17 @@
+<FDSN>
+The International Federation of Digital Seismograph Networks (FDSN) is a global organization. 
+Its membership is comprised of groups responsible for the installation and maintenance of seismographs either within their geographic borders or globally, to further the advancement of earth science and particularly the study of global seismic activity.
+The FDSN was also instrumental in development of a universal standard for distribution of broadband waveform data and related parametric information.
+The Standard for Exchange of Earthquake Data (SEED) format is the result of that effort.
+
+<Network Codes>
+Network codes are also assigned by the FDSN in order to provide uniqueness to seismological data streams. 
+Network operators request these unique codes for both permanent and temporary networks.
+
+<Routing Clients>
+Web services that can be queried for which data centers offer certain pieces of data and to get the actual data from various data centers.
+Routing services avaliable on obspy:
+    - IRIS Federator: 
+    - EIDAWS Routing Service: European Integrated Data Archive
+Both provide a RESTful interface and services for accessing waveforms, station info from various networks from a list of FDSN data centers.
+

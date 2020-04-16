@@ -4,8 +4,8 @@ from obspy.core import UTCDateTime
 from orm.tables import Network, Station
 
 class Metadata():
-    def __init__(self):
-        self.r_client = RoutingClient("iris-federator")
+    def __init__(self, routing_client):
+        self.r_client = RoutingClient(routing_client)
 
     def _codes_to_str(self, network_codes, station_codes):
         nets = set(network_codes)
