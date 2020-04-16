@@ -13,7 +13,7 @@ db.get_codes()
 """ Get live events from seedlink """
 sl = Seedlink()
 sl.get_stream_metadata()
-sl.add_channels()
+sl.add_channels(limit=200)
 print(f'{len(sl.channels)} live channels gathered from seedlink')
 
 # new codes set, for codes not in db

@@ -2,8 +2,7 @@ from sqlalchemy import Column, Integer, Float, String, DateTime, Boolean, Foreig
 #from sqlalchemy import UniqueConstraint, PrimaryKeyConstraint
 from sqlalchemy.orm import relationship
 
-from .base import Base
-
+from orm.base import Base
 
 class Network(Base):
     __tablename__ = "network"
@@ -75,7 +74,7 @@ class ChannelDiff(Base):
 
     id = Column(Integer, primary_key=True)
     uni_code = Column(String(12), ForeignKey('channel.uni_code'))
-    diff = Column(Boolean) # True is activated, False is removed
+    diff = Column(Boolean) # True == activated, False == removed
     time_id = Column(Integer, ForeignKey('access_time.id'))
 
     def __init__(self, **columns):

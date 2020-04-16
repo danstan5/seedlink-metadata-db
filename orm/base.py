@@ -5,7 +5,7 @@ from db_config import DB_Config
 
 db_config = DB_Config()
 
-engine = create_engine(db_config.get_url_conn_str_form('postgres_rds'))
+engine = create_engine(db_config.get_url_conn_str_form('local_docker'))
 
 Base = declarative_base()
 Base.metadata.create_all(bind=engine)

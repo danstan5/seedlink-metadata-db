@@ -12,12 +12,13 @@ class DB_Config():
 
     def get_url_conn_str_form(self, section) -> str:
         if not self._check_section_exists(section):
+            print('Section doesnt exist.')
             return
         host = self.parser.get(section, 'host')
         user = self.parser.get(section, 'user')
         password = self.parser.get(section, 'password')
         database = self.parser.get(section, 'database')
-        return f'postgresql+psycopg2://{user}:{password}@{host}/{database}'
+        return f'postgresql://{user}:{password}@{host}/{database}'
 
     def get_section(self, section) -> dict:
         if self._check_section_exists(section):

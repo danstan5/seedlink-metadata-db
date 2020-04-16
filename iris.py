@@ -14,16 +14,16 @@ class Metadata():
             net, sta = sta_code.split('_')
             nets.add(net)
             stas.add(sta)
-        self.nets = ",".join(nets) # set -> str
-        self.stas = ",".join(stas) # set -> str
+        return ",".join(nets), ",".join(stas) # set -> str
 
-    def __get_inventory(self, **kwargs):
+    def _get_inventory(self, **kwargs):
         kwargs['level'] = 'channel'
         kwargs['starttime'] = UTCDateTime.now()-60
         try:
             return self.r_client.get_stations(**kwargs)
         except Exception as e:
             # TODO Log error here #
+            # TODO Handle Error too #
             print(e)
 
     def get_inventory(self, net_codes, sta_codes):
@@ -35,13 +35,11 @@ class Metadata():
             print('No station codes to add, can\'t get inventory')
             return
         if len(sta_codes) < 400:
-            self._codes_to_str(net_codes, sta_codes)
-            self.inventory = self.__get_inventory(
-                network=self.nets,
-                station=self.stas)
+            nets, stas = self._codes_to_str(net_codes, sta_codes)
+            self.inventory = self._get_inventory(network=nets, station=stas)
         else:
             print('Comment: too many stations to query on')
-            self.inventory = self.__get_inventory()
+            self.inventory = self._get_inventory()
         print(f'No of networks downloaded = {len(self.inventory.networks)}.')
 
     def _get_network(self, network_code):

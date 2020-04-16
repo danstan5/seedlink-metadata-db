@@ -22,7 +22,7 @@ class Seedlink():
             self.stream = ET.fromstring(stream_metadata)
             self.access_time = dt.utcnow()
 
-    def add_channels(self):
+    def add_channels(self, limit=None):
         self.channels = {}
         self.net_codes = set()
         self.sta_codes = set()
@@ -41,6 +41,6 @@ class Seedlink():
                 self.net_codes.add(chan.network_code)
                 self.sta_codes.add(chan.station_code)
                 self.chan_codes.add(chan.uni_code)
-            # TEMP
-            # if len(self.channels) > 15000:
-            #     break
+            if limit:
+                if len(self.channels) > limit:
+                    return

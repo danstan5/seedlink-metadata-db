@@ -3,7 +3,7 @@ from psycopg2.extras import execute_values
 from db_config import DB_Config
 
 db_config = DB_Config()
-conn = db_config.get_section('postgres_rds')
+conn = db_config.get_section('local_docker')
 
 class QueryDB():
     def __init__(self):

@@ -15,3 +15,9 @@ Routing services avaliable on obspy:
     - EIDAWS Routing Service: European Integrated Data Archive
 Both provide a RESTful interface and services for accessing waveforms, station info from various networks from a list of FDSN data centers.
 
+<Seedlink>
+A protocol for transmission of seismic data over TCP/IP (sockets) with packets as 512 byte mini-SEED records.
+Servers such as IRIS DMC (rtserve.iris.washington.edu:18000) allow for recieval of real-time data collections by requesting network & station codes to the server.
+"Users should strive to minimize the number of connections to our server."
+"We do not have a mandate, nor is the DMC funded, to provide 24/7 real time data services. Therefore, interruptions in data flow may occur."
+Realtime feeds info can be send here or subscribed by email: https://ds.iris.edu/message-center/topic/iris-rtfeeds/
