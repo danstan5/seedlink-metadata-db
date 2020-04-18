@@ -1,11 +1,11 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from db_config import DB_Config
+from db.config import Config
 
-db_config = DB_Config()
+config = Config()
 
-engine = create_engine(db_config.get_url_conn_str_form('local_docker'))
+engine = create_engine(config.get_conn_str())
 
 Base = declarative_base()
 Base.metadata.create_all(bind=engine)

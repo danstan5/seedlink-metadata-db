@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, Float, String, DateTime, Boolean, Foreig
 #from sqlalchemy import UniqueConstraint, PrimaryKeyConstraint
 from sqlalchemy.orm import relationship
 
-from orm.base import Base
+from db.orm.base import Base
 
 class Network(Base):
     __tablename__ = "network"
@@ -61,7 +61,7 @@ class Channel(Base):
     endtime = Column(DateTime())
     active = Column(Boolean())
 
-    #station = relationship("Station", backref="channel")
+    # station = relationship("Station", backref="channel")
 
     def __init__(self, **columns):
         self.__dict__.update(columns)

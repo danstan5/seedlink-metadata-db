@@ -1,11 +1,14 @@
 import psycopg2 as pg
 from psycopg2.extras import execute_values
-from db_config import DB_Config
+from db.config import Config
+import traceback
+import logging, logger
+log = logging.getLogger(__name__)
 
-db_config = DB_Config()
-conn = db_config.get_section('local_docker')
+config = Config()
+conn =  config.get_dict()
 
-class QueryDB():
+class Database():
     def __init__(self):
         self.conn = pg.connect(**conn)
         self.cur = self.conn.cursor()
@@ -20,18 +23,19 @@ class QueryDB():
         self.cur.execute(sql, (datetime, type))
         id = self.cur.fetchone()
         self.conn.commit()
+        log.info('commit Access time to db')
         return id[0]
 
     def update_active_channels(self, codes, active):
-        if len(codes) == 0:
-            return
-        elif active:
-            sql = 'UPDATE channel SET active = true WHERE uni_code IN %s'
-        else:
-            sql = 'UPDATE channel SET active = false WHERE uni_code IN %s'
-        self.cur.execute(sql, (tuple(codes),))
-        assert self.cur.rowcount == len(codes), 'No. of channels to update not matching expected'
-        self.conn.commit()
+        if not len(codes) == 0:
+            if active:
+                sql = 'UPDATE channel SET active = true WHERE uni_code IN %s'
+            else:
+                sql = 'UPDATE channel SET active = false WHERE uni_code IN %s'
+            self.cur.execute(sql, (tuple(codes),))
+            assert self.cur.rowcount == len(codes), 'No. of channels to update not matching expected'
+            self.conn.commit()
+        log.info(f'commit {len(codes)} channels "active" update -> {"added" if active else "removed"}')
 
     def append_channel_diff(self, uni_code, diff, time_id):
         self.channel_diffs.append((uni_code, diff, time_id))
@@ -41,9 +45,12 @@ class QueryDB():
         try:
             execute_values(self.cur, sql, self.channel_diffs)
             self.conn.commit()
+            log.info(f'commit {len(self.channel_diffs)} channel diffs')
             self.channel_diffs = []
-        except (Exception, pg.Error) as error:
-            print(error)
+        except pg.Error:
+            log.exception('Postgres error on committing channel diff')
+        except:
+            log.error("Uncaught exception: %s", traceback.format_exc())
 
     def close(self):
         self.cur.close()

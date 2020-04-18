@@ -1,11 +1,22 @@
+import sys
 from obspy.clients.fdsn import RoutingClient
 from obspy.core import UTCDateTime
 
-from orm.tables import Network, Station
+from db.orm.tables import Network, Station
+
+import logging, logger
+log = logging.getLogger(__name__)
 
 class Metadata():
     def __init__(self, routing_client):
-        self.r_client = RoutingClient(routing_client)
+        self.r_client = self.create_client(routing_client)
+    
+    def create_client(self, routing_client):
+        try:
+            return RoutingClient(routing_client)
+        except:
+            log.error('Couldn\'t connect to %s' % routing_client)
+            raise SystemExit
 
     def _codes_to_str(self, network_codes, station_codes):
         nets = set(network_codes)
@@ -21,26 +32,28 @@ class Metadata():
         kwargs['starttime'] = UTCDateTime.now()-60
         try:
             return self.r_client.get_stations(**kwargs)
-        except Exception as e:
-            # TODO Log error here #
-            # TODO Handle Error too #
-            print(e)
+        except Exception:
+            log.error('Accessing inventory failed.\n \
+                Data parsed: %s' % str(kwargs)
+            )
+            log.exception('Traceback: ')
+            raise SystemExit
 
     def get_inventory(self, net_codes, sta_codes):
         """ 
-        Return an inventory object of all stations in IRIS
+        Return an inventory object for the routing server
         : can be queried by networks and stations
         """
         if len(sta_codes) == 0:
-            print('No station codes to add, can\'t get inventory')
+            log.warning('No station codes to add, can\'t get inventory')
             return
         if len(sta_codes) < 400:
             nets, stas = self._codes_to_str(net_codes, sta_codes)
             self.inventory = self._get_inventory(network=nets, station=stas)
         else:
-            print('Comment: too many stations to query on')
+            log.warning('%s is too many stations to query on' % len(sta_codes))
             self.inventory = self._get_inventory()
-        print(f'No of networks downloaded = {len(self.inventory.networks)}.')
+        log.info('No of networks downloaded %s' % len(self.inventory.networks))
 
     def _get_network(self, network_code):
         self.network = None
