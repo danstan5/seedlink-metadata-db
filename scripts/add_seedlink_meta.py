@@ -13,14 +13,14 @@ log.info('Start add active seedlinks metadata to db')
 
 """ Connect to database """
 db = AlchemyDatabase()
-db.get_codes()
 
 """ Get live events from seedlink """
 sl = Seedlink('iris')
 sl.get_stream_metadata()
 sl.add_channels()
 
-# new codes set, for codes not in db
+"""find new codes (not existing in db)"""
+db.get_codes()
 net_codes = sl.net_codes - db.net_codes
 sta_codes = sl.sta_codes - db.sta_codes
 chan_codes = sl.chan_codes - db.chan_codes

@@ -37,7 +37,7 @@ class Seedlink():
         except:
             log.exception('Could not get stream information.')
             raise SystemExit
-        log.info('STREAMS added')
+        log.info('Streams information avaliable')
         self.stream = ET.fromstring(meta_stream)
         self.access_time = dt.utcnow()
 
